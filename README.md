@@ -12,23 +12,23 @@ Zaprojektowanie modelu AI, który oceni ręce brydżowe i na ich podstawie będz
 
 
 
-Kamień milowy nr 1:
+1. Kamień milowy nr 1:
 Określenie Celu i Tematu projektu
 Dokładne określenie celu projektu, zebranie wymagań, wstępne znalezienie danych które mogą zostać użyte do szkolenia sztucznej inteligencji.
 Oczekiwany wynik: Określone wymagania, znalezione zestawy danych które mogą posłużyć do szkolenia AI
-Kamień milowy nr 2:
+2. Kamień milowy nr 2:
 Przygotowanie zbioru danych
 Przygotowanie, czyszczenie, wstępna analiza danych do treningu, składanie danych z różnych źródeł.
 Oczekiwany wynik: gotowy zestaw danych do treningu AI 
-Kamień milowy nr 3:
+3. Kamień milowy nr 3:
 Wybór i implementacja modelu AI
 Wybór algorytmu, początkowe prace nad implementacją, testowanie różnych rozwiązań na przygotowanym zestawie danych.
 Oczekiwany wynik: Gotowy algorytm do dalszej optymalizacji
-Kamień milowy nr 4:
-	Ocena wyników i ewentualne poprawki
+4. Kamień milowy nr 4:
+Ocena wyników i ewentualne poprawki
 Optymalizacja wydajności oraz ogólnych wyników, ewentualna poprawa jakości danych, dostosowywanie hiperparametrów
 Oczekiwany wynik: Zoptymalizowany model gotowy do wdrożenia do aplikacji
-Kamień milowy nr 5:
+5. Kamień milowy nr 5:
 Wdrożenie modelu i przygotowanie końcowej prezentacji
 Wdrożenie modelu do aplikacji, integracja z otoczeniem.
 Oczekiwany wynik: Gotowy system z którego może korzystać użytkownik.
