@@ -8,8 +8,9 @@ from sklearn.metrics import accuracy_score, classification_report
 from sklearn.utils.class_weight import compute_class_weight
 
 # Parsowanie
+#-----------------------------------------------------------------
 def parse_hand_pbn(hand_str):
-    """Parsuje rękę z formatu PBN do słownika."""
+    
     suits = {'S': [], 'H': [], 'D': [], 'C': []}
     current_suit = None
     for char in hand_str:
@@ -20,23 +21,23 @@ def parse_hand_pbn(hand_str):
     return suits
 
 def calculate_suit_lengths(hand):
-    """Oblicza liczbę kart w każdym kolorze."""
+    
     return [len(hand['S']), len(hand['H']), len(hand['D']), len(hand['C'])]
 
 def parse_auction(auction_str):
-    """Parsuje sekwencję licytacji do listy odzywek."""
+    
     bids = []
     for part in auction_str.split(';'):
         if ':' in part:
             player, bid = part.split(':')
             bids.append((player, bid))
     return bids
+#-----------------------------------------------------------------
 
-# Odzywki - DODANO <PAD> na pozycji 0
 possible_bids = ['<PAD>', 'P', 'X', 'XX'] + [f"{level}{suit}" for level in range(1, 8) for suit in ['C', 'D', 'H', 'S', 'NT']]
 bid_to_idx = {bid: idx for idx, bid in enumerate(possible_bids)}
 idx_to_bid = {idx: bid for bid, idx in bid_to_idx.items()}
-
+#-----------------------------------------------------------------
 # Dataset
 class BridgeBiddingDataset(Dataset):
     def __init__(self, csv_file):
@@ -56,17 +57,16 @@ class BridgeBiddingDataset(Dataset):
             # Licytacja
             auction = parse_auction(row['auction_sequence'])
 
-            # Generujemy próbki TYLKO dla momentów, gdy licytuje South
+            # AAAA
             for i in range(len(auction)):
                 player, current_bid = auction[i]
                 
-                if player == 'S':  # Model uczy się licytować tylko z perspektywy South
+                if player == 'S':  #PERSPEKTYWA
                     prev_bids = [bid_to_idx.get(b, bid_to_idx['<PAD>']) for p, b in auction[:i]]
                     next_bid = bid_to_idx.get(current_bid, bid_to_idx['<PAD>'])
 
                     max_seq_len = 32
-                    # Padding uzupełniamy zerami (<PAD>) na początku sekwencji (tzw. pre-padding)
-                    # ułatwia to działanie LSTM, bo najważniejsze ostatnie odzywki są na końcu
+                    
                     if len(prev_bids) < max_seq_len:
                         prev_bids_padded = ([0] * (max_seq_len - len(prev_bids))) + prev_bids
                     else:
@@ -83,32 +83,31 @@ class BridgeBiddingDataset(Dataset):
 
     def __getitem__(self, idx):
         return self.samples[idx]
-
+#-----------------------------------------------------------------
 # Model
 class BridgeBiddingModel(nn.Module):
     def __init__(self, num_hand_features, num_bid_classes, embedding_dim=16, hidden_size=64):
         super(BridgeBiddingModel, self).__init__()
         
-        # POPRAWKA 1: Embedding dla odzywek
+        # Embedding dla odzywek
         self.bid_embedding = nn.Embedding(num_embeddings=num_bid_classes, embedding_dim=embedding_dim, padding_idx=0)
         
-        # POPRAWKA 1: LSTM czyta tylko sekwencję osadzonych (embedded) odzywek
+        #  LSTM SEKWENCJA
         self.lstm = nn.LSTM(input_size=embedding_dim, hidden_size=hidden_size, batch_first=True)
         
-        # Warstwy w pełni połączone
+
         self.fc1 = nn.Linear(hidden_size + num_hand_features, 128)
         self.fc2 = nn.Linear(128, num_bid_classes)
 
     def forward(self, hand_features, bid_sequence):
-        # bid_sequence ma kształt (batch_size, seq_len)
+    
         embedded_bids = self.bid_embedding(bid_sequence)
         
         lstm_out, _ = self.lstm(embedded_bids)
         
-        # Pobieramy stan z ostatniego kroku czasowego sekwencji
         last_lstm_out = lstm_out[:, -1, :] 
         
-        # Łączymy wektor historii licytacji z parametrami ręki
+        # HISTORIA + reka
         combined = torch.cat((last_lstm_out, hand_features), dim=1)
         out = torch.relu(self.fc1(combined))
         out = self.fc2(out)
@@ -124,17 +123,16 @@ def train_model():
     train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True)
     test_loader = DataLoader(test_dataset, batch_size=32, shuffle=False)
 
-    # POPRAWKA 3: Obliczanie wag klas w celu niwelacji dominacji "Pasa"
+    # KARY
     all_targets = [sample[2].item() for sample in dataset.samples]
     unique_classes = np.unique(all_targets)
     weights = compute_class_weight(class_weight='balanced', classes=unique_classes, y=all_targets)
     
-    # Tworzymy wektor wag dla wszystkich możliwych odzywek (domyślnie 1.0)
     class_weights = torch.ones(len(possible_bids), dtype=torch.float32)
     for cls_idx, weight in zip(unique_classes, weights):
         class_weights[cls_idx] = weight
     
-    # Przekazujemy wagi do funkcji kosztu
+    
     criterion = nn.CrossEntropyLoss(weight=class_weights)
     
     model = BridgeBiddingModel(num_hand_features=5, num_bid_classes=len(possible_bids))
